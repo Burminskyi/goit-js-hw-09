@@ -6,14 +6,19 @@ const refs = {
   inputField: document.getElementById('datetime-picker'),
   startBtn: document.querySelector('button[data-start]'),
   timer: document.querySelector('.timer'),
-  fields: document.querySelectorAll('.field'),
-  labels: document.querySelectorAll('.label'),
-  values: document.querySelectorAll('.value'),
   days: document.querySelector('span[data-days]'),
   hours: document.querySelector('span[data-hours]'),
   minutes: document.querySelector('span[data-minutes]'),
   seconds: document.querySelector('span[data-seconds]'),
 };
+
+const clearBtn = document.createElement('button');
+clearBtn.textContent = 'Clear';
+refs.startBtn.after(clearBtn);
+
+refs.timer.style.display = 'flex';
+refs.timer.style.gap = '10px';
+refs.startBtn.style.marginRight = '5px';
 
 let selectedDate = 0;
 let timerId = null;
@@ -28,40 +33,14 @@ const options = {
     if (selectedDates[0] < Date.now()) {
       Notiflix.Notify.failure('Please choose a date in the future');
     } else {
-      refs.startBtn.removeAttribute('disabled', '');
-      refs.days.textContent = '00';
-      // Remaining hours
-      refs.hours.textContent = '00';
-      // Remaining minutes
-      refs.minutes.textContent = '00';
-      // Remaining seconds
-      refs.seconds.textContent = '00';
-      return (selectedDate = selectedDates[0].getTime());
+      getTimeOfSelectedDate(selectedDates[0]);
     }
   },
 };
 
-const clearBtn = document.createElement('button');
-clearBtn.textContent = 'Clear';
-refs.startBtn.after(clearBtn);
-
-refs.timer.style.display = 'flex';
-refs.timer.style.gap = '10px';
-refs.startBtn.style.marginRight = '5px';
-
-for (let i = 0; i < refs.fields.length; i++) {
-  refs.fields[i].style.display = 'flex';
-  refs.fields[i].style.flexDirection = 'column';
-  refs.fields[i].style.alignItems = 'center';
-}
-
-for (let i = 0; i < refs.labels.length; i++) {
-  refs.labels[i].style.textTransform = 'uppercase';
-  refs.labels[i].style.fontSize = '10px';
-}
-
-for (let i = 0; i < refs.values.length; i++) {
-  refs.values[i].style.fontSize = '28px';
+function getTimeOfSelectedDate(data) {
+  refs.startBtn.removeAttribute('disabled', '');
+  return (selectedDate = data.getTime());
 }
 
 flatpickr(refs.inputField, options);
@@ -80,6 +59,39 @@ function onStartBtnClick(e) {
   }
 }
 
+function convertMs(ms) {
+  if (ms < 0) {
+    Notiflix.Notify.success('Time end');
+    clearInterval(timerId);
+  } else {
+    // Number of milliseconds per unit of time
+    const second = 1000;
+    const minute = second * 60;
+    const hour = minute * 60;
+    const day = hour * 24;
+
+    // Remaining days
+    const days = addLeadingZero(Math.floor(ms / day));
+    // Remaining hours
+    const hours = addLeadingZero(Math.floor((ms % day) / hour));
+    // Remaining minutes
+    const minutes = addLeadingZero(Math.floor(((ms % day) % hour) / minute));
+    // Remaining seconds
+    const seconds = addLeadingZero(
+      Math.floor((((ms % day) % hour) % minute) / second)
+    );
+
+    refs.days.textContent = days;
+    refs.hours.textContent = hours;
+    refs.minutes.textContent = minutes;
+    refs.seconds.textContent = seconds;
+  }
+}
+
+function addLeadingZero(value) {
+  return String(value).padStart(2, '0');
+}
+
 clearBtn.addEventListener('click', onClearBtnClick);
 
 function onClearBtnClick(e) {
@@ -90,32 +102,4 @@ function onClearBtnClick(e) {
   refs.hours.textContent = '00';
   refs.minutes.textContent = '00';
   refs.seconds.textContent = '00';
-}
-
-function convertMs(ms) {
-  // Number of milliseconds per unit of time
-  const second = 1000;
-  const minute = second * 60;
-  const hour = minute * 60;
-  const day = hour * 24;
-
-  // Remaining days
-  const days = addLeadingZero(Math.floor(ms / day));
-  // Remaining hours
-  const hours = addLeadingZero(Math.floor((ms % day) / hour));
-  // Remaining minutes
-  const minutes = addLeadingZero(Math.floor(((ms % day) % hour) / minute));
-  // Remaining seconds
-  const seconds = addLeadingZero(
-    Math.floor((((ms % day) % hour) % minute) / second)
-  );
-
-  refs.days.textContent = days;
-  refs.hours.textContent = hours;
-  refs.minutes.textContent = minutes;
-  refs.seconds.textContent = seconds;
-}
-
-function addLeadingZero(value) {
-  return String(value).padStart(2, '0');
 }
